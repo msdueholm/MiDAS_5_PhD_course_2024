@@ -1,0 +1,54 @@
+#!/usr/bin/bash -l
+#SBATCH --job-name=MiDAS5_V35_amplicons
+#SBATCH --output=job_%j_%x.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --partition=general
+#SBATCH --cpus-per-task=128
+#SBATCH --mem=20G
+#SBATCH --time=2-00:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=md@bio.aau.dk
+
+# Exit on first error and if any variables are unset
+set -eu
+max_threads="$(nproc)"
+
+# Retrive and relabel V35a forward reads (reverse in relation to the 16S rRNA gene) based in a sample list (samples.txt).
+
+mkdir V35_raw_data
+
+while read SAMPLES
+do
+a="_";
+NAME=$SAMPLES;
+find /raw_data/sequences/Illumina/MiSeq/ -name $NAME$a*R1* -exec gzip -cd {} \; > V35_raw_data/$NAME.R1.fq 
+usearch11 -fastx_relabel V35_raw_data/$NAME.R1.fq -prefix $NAME$a -fastqout V35_raw_data/temp.$NAME.R1.fq
+cat V35_raw_data/temp.$NAME.R1.fq >> V35_raw_data/V35_R1.fastq
+done < samples.txt
+date
+
+rm V35_raw_data/temp*.fq
+
+# Usearch pipeline
+mkdir V35_Usearch_analysis
+
+### Quality filtering
+usearch11 -filter_phix V35_raw_data/V35_R1.fastq -output V35_Usearch_analysis/V35_R1_phixfiltered.fq -threads $max_threads
+usearch11 -fastx_truncate V35_Usearch_analysis/V35_R1_phixfiltered.fq -stripleft 17 -trunclen 250 -fastqout V35_Usearch_analysis/V35_R1_250bp.fq -threads $max_threads
+usearch11 -fastx_revcomp V35_Usearch_analysis/V35_R1_250bp.fq -fastqout V35_Usearch_analysis/V35_reverse_250bp.fq -threads $max_threads
+usearch11 -fastq_filter V35_Usearch_analysis/V35_reverse_250bp.fq -fastq_maxee 1.0 -fastaout V35_Usearch_analysis/V35_reverse_250bp_qc.fa -threads $max_threads
+
+### Identify unique sequences
+usearch11 -fastx_uniques V35_Usearch_analysis/V35_reverse_250bp_qc.fa -fastaout V35_Usearch_analysis/V35_reverse_250bp_unique.fa -sizeout -relabel uniq -threads $max_threads
+
+### Create ASVs
+usearch11 -unoise3 V35_Usearch_analysis/V35_reverse_250bp_unique.fa -zotus V35_Usearch_analysis/V35_ASV.fa -threads $max_threads
+sed -i 's/Zotu/ASV/g' V35_Usearch_analysis/V35_ASV.fa 
+
+### Create ASV table
+usearch11 -otutab V35_Usearch_analysis/V35_reverse_250bp_qc.fa -zotus V35_Usearch_analysis/V35_ASV.fa -sample_delim _ -strand plus -otutabout V35_Usearch_analysis/V35_ASVtab.txt -threads $max_threads
+
+### Predict taxonomy using sintax (MiDAS5.0_20211221)
+usearch11 -sintax V35_Usearch_analysis/V35_ASV.fa -db MiDAS_5.3_sintax.fa -tabbedout V35_Usearch_analysis/V35_MiDAS_5.3.sintax -strand both -sintax_cutoff 0.8 -threads $max_threads

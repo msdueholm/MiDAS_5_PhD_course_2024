@@ -1,0 +1,69 @@
+SeqID	SampleID	Replicate_type	Continent	Country	Country_code	City	Latitude	Longitude	Sampling_date	Temperature	Temperature_range	Digester_location	Digester_technology	Primary_substrate	Digester_age	Ammonium	TS	VS	pH	Volumen	SRT
+MQ200925-86	AU-01-A	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.9	7800	13.5
+MQ200925-87	AU-01-B	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.9	7800	13.5
+MQ200925-88	AU-02-A	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	38.8	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.8	7800	13.5
+MQ200925-89	AU-02-B	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	38.8	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.8	7800	13.5
+MQ200925-90	AU-03-A	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	37.6	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.8	7800	13.5
+MQ200925-91	AU-03-B	Biological	Oceania	Australia	AU	City13	-34.77	138.58	13/01/2020	37.6	Mesophilic	WWTP	CSTR	Wastewater sludge	60		2.16	1.17	6.8	7800	13.5
+MQ200925-92	AU-04-A	Biological	Oceania	Australia	AU	City13	-34.96	138.93	13/01/2020	34.5	Mesophilic	WWTP	CSTR	Wastewater sludge	15		4.13	2.43	7.1	650	36
+MQ200925-93	AU-04-B	Biological	Oceania	Australia	AU	City13	-34.96	138.93	13/01/2020	34.5	Mesophilic	WWTP	CSTR	Wastewater sludge	15		4.13	2.43	7.1	650	36
+MQ200925-94	AU-05-A	Biological	Oceania	Australia	AU	City13	-34.96	138.51	13/01/2020	37.7	Mesophilic	WWTP	CSTR	Wastewater sludge	65		1.25	0.75	6.9	3200	15
+MQ200925-95	AU-05-B	Biological	Oceania	Australia	AU	City13	-34.96	138.51	13/01/2020	37.7	Mesophilic	WWTP	CSTR	Wastewater sludge	65		1.25	0.75	6.9	3200	15
+MQ200925-96	AU-06-A	Biological	Oceania	Australia	AU	City13	-34.96	138.51	13/01/2020	38.2	Mesophilic	WWTP	CSTR	Wastewater sludge	56		1.25	0.75	6.9	3200	15
+MQ200925-97	AU-06-B	Biological	Oceania	Australia	AU	City13	-34.96	138.51	13/01/2020	38.2	Mesophilic	WWTP	CSTR	Wastewater sludge	56		1.25	0.75	6.9	3200	15
+MQ200925-98	AU-07-A	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	43		2.3	0.74	7.8	8000	15
+MQ200925-99	AU-07-B	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	43		2.3	0.74	7.8	8000	15
+MQ200925-100	AU-08-A	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	43		2.3	0.74	7.9	8000	15
+MQ200925-101	AU-08-B	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	43		2.3	0.74	7.9	8000	15
+MQ200925-102	AU-09-A	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	33		2.3	0.74	7.6	8000	15
+MQ200925-103	AU-09-B	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	33		2.3	0.74	7.6	8000	15
+MQ200925-104	AU-10-A	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	33		2.3	0.74	7.8	8000	15
+MQ200925-105	AU-10-B	Biological	Oceania	Australia	AU	City14	-38.02	145.17	20/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	33		2.3	0.74	7.8	8000	15
+MQ200925-106	AU-11-A	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	42.03	Mesophilic	WWTP	CSTR	Wastewater sludge	15	2700	47	31.96	7.6	2660	
+MQ200925-107	AU-11-B	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	42.03	Mesophilic	WWTP	CSTR	Wastewater sludge	15	2700	47	31.96	7.6	2660	
+MQ200925-108	AU-12-A	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	41.8	Mesophilic	WWTP	CSTR	Wastewater sludge	15	3200	47	31.96	7.5	2660	
+MQ200925-109	AU-12-B	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	41.8	Mesophilic	WWTP	CSTR	Wastewater sludge	15	3200	47	31.96	7.5	2660	
+MQ200925-110	AU-13-A	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	42.2	Mesophilic	WWTP	CSTR	Wastewater sludge	15	2900	46	30.82	7.5	2660	
+MQ200925-111	AU-13-B	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	42.2	Mesophilic	WWTP	CSTR	Wastewater sludge	15	2900	46	30.82	7.5	2660	
+MQ200925-112	AU-14-A	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	41.45	Mesophilic	WWTP	CSTR	Wastewater sludge	15	3000	46	30.82	7.5	2660	
+MQ200925-113	AU-14-B	Biological	Oceania	Australia	AU	City15	-27.55	152.99	22/01/2020	41.45	Mesophilic	WWTP	CSTR	Wastewater sludge	15	3000	46	30.82	7.5	2660	
+MQ200925-114	AU-15-A	Biological	Oceania	Australia	AU	City16	-27.91	153.37	23/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	8	851	39	27	7	12000	
+MQ200925-115	AU-15-B	Biological	Oceania	Australia	AU	City16	-27.91	153.37	23/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	8	851	39	27	7	12000	
+MQ200925-116	AU-16-A	Biological	Oceania	Australia	AU	City16	-27.91	153.37	23/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	8	851	39	27	7	12000	
+MQ200925-117	AU-16-B	Biological	Oceania	Australia	AU	City16	-27.91	153.37	23/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	8	851	39	27	7	12000	
+MQ200925-118	AU-17-A	Biological	Oceania	Australia	AU	City16	-28.12	153.44	23/01/2020	35	Mesophilic	WWTP	CSTR	Wastewater sludge	30		28.3	16.7	7.1	4200	97.6744186
+MQ200925-119	AU-17-B	Biological	Oceania	Australia	AU	City16	-28.12	153.44	23/01/2020	35	Mesophilic	WWTP	CSTR	Wastewater sludge	30		28.3	16.7	7.1	4200	97.6744186
+MQ200925-120	AU-18-A	Biological	Oceania	Australia	AU	City16	-28.12	153.44	23/01/2020	35	Mesophilic	WWTP	CSTR	Wastewater sludge	30		28.3	16.7	7.1	4200	97.6744186
+MQ200925-121	AU-18-B	Biological	Oceania	Australia	AU	City16	-28.12	153.44	23/01/2020	35	Mesophilic	WWTP	CSTR	Wastewater sludge	30		28.3	16.7	7.1	4200	97.6744186
+MQ200925-122	AU-19-A	Biological	Oceania	Australia	AU	City17	-26.73	153.12	23/01/2020	38	Mesophilic	WWTP	CSTR	Wastewater sludge	0.5		23	16.33	7.5	4701	33.848
+MQ200925-123	AU-19-B	Biological	Oceania	Australia	AU	City17	-26.73	153.12	23/01/2020	38	Mesophilic	WWTP	CSTR	Wastewater sludge	0.5		23	16.33	7.5	4701	33.848
+MQ200925-124	AU-20-A	Biological	Oceania	Australia	AU	City18	-34.03	151.16	17/01/2020	36.9	Mesophilic	WWTP	TSAD	Wastewater sludge	35		20.02	15.94	7.1	4240	11.3
+MQ200925-125	AU-20-B	Biological	Oceania	Australia	AU	City18	-34.03	151.16	17/01/2020	36.9	Mesophilic	WWTP	TSAD	Wastewater sludge	35		20.02	15.94	7.1	4240	11.3
+MQ200925-126	AU-21-A	Biological	Oceania	Australia	AU	City18	-33.89	151.28	20/01/2020	39.1	Mesophilic	WWTP	CSTR	Wastewater sludge	75		42	31.5	7.2	4050	32
+MQ200925-127	AU-21-B	Biological	Oceania	Australia	AU	City18	-33.89	151.28	20/01/2020	39.1	Mesophilic	WWTP	CSTR	Wastewater sludge	75		42	31.5	7.2	4050	32
+MQ200925-128	AU-22-A	Biological	Oceania	Australia	AU	City18	-33.81	151.3	20/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	13		40	32.5	7.6	4050	26
+MQ200925-129	AU-22-B	Biological	Oceania	Australia	AU	City18	-33.81	151.3	20/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	13		40	32.5	7.6	4050	26
+MQ200925-130	AU-24-A	Biological	Oceania	Australia	AU	City18	-33.96	151.25	17/01/2020	37.7	Mesophilic	WWTP	CSTR	Wastewater sludge	50		38.1	22.5	7.2	10400	23
+MQ200925-131	AU-24-B	Biological	Oceania	Australia	AU	City18	-33.96	151.25	17/01/2020	37.7	Mesophilic	WWTP	CSTR	Wastewater sludge	50		38.1	22.5	7.2	10400	23
+MQ200925-132	AU-25-A	Biological	Oceania	Australia	AU	City18	-33.96	151.25	17/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	50		38.1	22.5	7.2	10400	23
+MQ200925-133	AU-25-B	Biological	Oceania	Australia	AU	City18	-33.96	151.25	17/01/2020	37.9	Mesophilic	WWTP	CSTR	Wastewater sludge	50		38.1	22.5	7.2	10400	23
+MQ200925-134	AU-26-A	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.4	Mesophilic	WWTP	CSTR	Wastewater sludge	30	547	13.9	10.981	6.96	4700	20
+MQ200925-135	AU-26-B	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.4	Mesophilic	WWTP	CSTR	Wastewater sludge	30	547	13.9	10.981	6.96	4700	20
+MQ200925-136	AU-27-A	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.8	Mesophilic	WWTP	CSTR	Wastewater sludge	30	558	14.1	11.139	7.01	4700	21.6
+MQ200925-137	AU-27-B	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.8	Mesophilic	WWTP	CSTR	Wastewater sludge	30	558	14.1	11.139	7.01	4700	21.6
+MQ200925-138	AU-28-A	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.3	Mesophilic	WWTP	CSTR	Wastewater sludge	30	627	14.2	11.218	7	4700	22.8
+MQ200925-139	AU-28-B	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.3	Mesophilic	WWTP	CSTR	Wastewater sludge	30	627	14.2	11.218	7	4700	22.8
+MQ200925-140	AU-29-A	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.3	Mesophilic	WWTP	CSTR	Wastewater sludge	30	538	14.3	11.297	6.97	4700	20
+MQ200925-141	AU-29-B	Biological	Oceania	Australia	AU	City19	-31.78	115.78	30/01/2020	37.3	Mesophilic	WWTP	CSTR	Wastewater sludge	30	538	14.3	11.297	6.97	4700	20
+MQ200925-142	AU-30-A	Biological	Oceania	Australia	AU	City19	-32.15	115.77	30/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	20	1330	27.4	20.824	7.18	8000	21.5
+MQ200925-143	AU-30-B	Biological	Oceania	Australia	AU	City19	-32.15	115.77	30/01/2020	37.5	Mesophilic	WWTP	CSTR	Wastewater sludge	20	1330	27.4	20.824	7.18	8000	21.5
+MQ200925-144	AU-31-A	Biological	Oceania	Australia	AU	City19	-32.15	115.77	30/01/2020	37.4	Mesophilic	WWTP	CSTR	Wastewater sludge	20	1240	27.1	20.596	7.14	8000	21.4
+MQ200925-145	AU-31-B	Biological	Oceania	Australia	AU	City19	-32.15	115.77	30/01/2020	37.4	Mesophilic	WWTP	CSTR	Wastewater sludge	20	1240	27.1	20.596	7.14	8000	21.4
+MQ200925-146	AU-32-A	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.3	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
+MQ200925-147	AU-32-B	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.3	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
+MQ200925-148	AU-33-A	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.1	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
+MQ200925-149	AU-33-B	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.1	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
+MQ200925-150	AU-34-A	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.1	Mesophilic	WWTP	Other	Wastewater sludge	46	900	30	21	7.3	5500	
+MQ200925-151	AU-34-B	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39.1	Mesophilic	WWTP	Other	Wastewater sludge	46	900	30	21	7.3	5500	
+MQ200925-152	AU-35-A	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
+MQ200925-153	AU-35-B	Biological	Oceania	Australia	AU	City20	-27.38	153.15	31/01/2020	39	Mesophilic	WWTP	Other	Wastewater sludge	46	900	28	19.6	7.3	5500	
