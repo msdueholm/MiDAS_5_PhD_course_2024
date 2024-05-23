@@ -1,0 +1,240 @@
+---
+title: "MiDAS PhD course 2024"
+author: "Marie Riisgaard-Jensen and Sofie Zacho Vestergaard"
+date: "2024-05-22"
+output: html_document
+---
+
+# Installation of packages (!!only do once!!)
+```{r}
+#ampvis2
+install.packages("remotes")
+remotes::install_github("kasperskytte/ampvis2")
+
+#dplyr for data manipulation
+install.packages("dplyr")
+```
+
+
+# Load packages
+```{r, include=FALSE}
+library(ampvis2)
+library(dplyr)
+```
+
+
+# Load data
+```{r}
+# Set paths
+V13_metadata = 'Amplicon_data_for_hands_on_exercices/V13_metadata.txt'#metadata
+V13_ASVtab = 'Amplicon_data_for_hands_on_exercices/V13_ASVtab.txt' #ASV table
+V13_tax = 'Amplicon_data_for_hands_on_exercices/V13_ASV_MiDAS_5.3.sintax' #taxonomy
+ASV='Amplicon_data_for_hands_on_exercices/V13_ASV.fa' #ASVs
+
+# Load into ampvis object
+d13 <- amp_load(otutable = V13_ASVtab, 
+                taxonomy = V13_tax,
+                metadata = V13_metadata,
+                fasta = ASV)
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+d13$metadata <- d13$metadata %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
+
+```
+
+
+# Explore metadata
+```{r}
+# extract metadata from ampvis object
+meta <- d13$metadata
+
+print(meta)
+
+```
+
+```{r}
+# number of cities
+unique(meta$City)
+```
+
+```{r}
+# How many samples from each city
+table(meta$City)
+```
+
+```{r}
+table(meta$Location)
+```
+
+```{r}
+
+# Convert Location to a factor with the new order (only used for plotting)
+meta$Location <- factor(meta$Location, levels = unique(meta$Location[order(meta$City)]))
+
+# plot number of samples for each plant
+ggplot(meta,aes(x=Location, fill = City)) +
+  geom_bar(width = 0.8) +
+  labs(y= 'Number of samples')+
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_brewer(palette = 'BrBG')
+  
+
+```
+
+```{r}
+# put on numbers of tanks for each plant
+meta %>% group_by(Location) %>% 
+  mutate(Tanks = n_distinct(Tank_ID)) %>%
+  ggplot(.,aes(x=Location)) +
+  geom_bar(aes(fill = City),width = 0.8) +
+  labs(y= 'Number of samples')+
+  geom_label(aes(y=Tanks,label=Tanks)) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_brewer(palette = 'BrBG')
+  
+```
+
+```{r}
+install.packages('ggrepel')
+library(ggrepel)
+
+metadata <- meta
+world_coordinates <- ggplot2::map_data("world") %>%
+  full_join(., metadata %>% rename("region" = "Country"),
+            relationship = "many-to-many", by = join_by(region)) %>%
+  ungroup() %>%
+  filter(region == "Australia")
+
+
+  ggplot() +
+  geom_map(
+    data = world_coordinates, map = world_coordinates,
+    aes(long, lat, map_id = region,), 
+    color = "grey", linewidth = 0.1, fill = "grey90",
+  ) +
+  geom_point(data = distinct(metadata, City, Latitude, Longitude),
+             aes(x = Longitude, y = Latitude, color = City),
+             size = 3.4) +
+  geom_label_repel(data = distinct(metadata, City, Latitude, Longitude),
+             aes(x = Longitude, y = Latitude, label = City, fill = City),
+             alpha = 0.8,
+             size = 3.4) +
+  theme_void() +
+    theme(legend.position = "none")
+```
+
+
+
+## Explore sequences
+```{r}
+d13$refseq
+```
+
+
+
+
+
+
+
+# Number of reads
+
+## What are the minimum and maximum number of reads? 
+```{r}
+d13
+```
+
+## What are the minimum and maximum number of reads of city13?
+```{r}
+d13_city13 <- amp_subset_samples(d13, City == 'City13')
+d13_city13
+```
+
+## Have the samples been sequenced deep enough?
+```{r}
+amp_rarecurve(d13,
+              facet_by = 'City', color_by = 'Location')
+```
+
+## Rarefy the data 
+```{r}
+
+d13_rare <- amp_subset_samples(d13, rarefy = 10000, minreads = 10000, 
+                               removeAbsentOTUs = T)
+
+```
+
+
+# Alpha diversity of data
+## Calculate the alpha diversity (ObservedOTU, Shannon, Inverse Simpson)
+```{r}
+alpha <- amp_alpha_diversity(d13_rare)
+
+ggplot(alpha, aes(x = Location,
+                  y = Shannon,
+                  color = City)) +
+  geom_point()
+
+```
+
+
+
+
+
+
+
+
+
+
+# Normalise the data
+## 
+```{r}
+d13n <- amp_subset_samples(d13_rare,normalise = T)
+
+d13_rare$abund
+d13n$abund
+```
+
+
+
+
+# Most abundant bacteria
+## Which bacterial taxa are the most abundant across all samples?
+```{r, fig.height=2, fig.width=6}
+amp_heatmap(d13n,
+            normalise = F,
+            tax_aggregate = "Genus",
+            tax_add = "Phylum",
+            group_by = "Location",
+            sort_by = "-27.55,152.99",
+            tax_show = 20,
+            showRemainingTaxa = T,
+            plot_functions = T
+            )
+```
+
+
+
+
+
+```{r}
+amp_boxplot(d13n,
+            group_by = 'City')
+
+
+```
+
+
+
+
+
+
+# Beta diversity
+## Make a ordination plot of all samples
+```{r}
+amp_ordinate()
+
+```
+
+
