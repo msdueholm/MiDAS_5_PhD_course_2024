@@ -1,0 +1,141 @@
+---
+title: "MiDAS PhD course 2024"
+author: "Marie Riisgaard-Jensen and Sofie Zacho Vestergaard"
+date: "2024-05-22"
+output: html_document
+---
+
+# Installation of packages (!!only do once!!)
+```{r}
+#ampvis2
+install.packages("remotes")
+remotes::install_github("kasperskytte/ampvis2")
+
+#dplyr for data manipulation
+install.packages("dplyr")
+```
+
+
+# Load packages
+```{r, include=FALSE}
+library(ampvis2)
+library(dplyr)
+```
+
+
+# Load data
+```{r}
+# Set paths
+V13_metadata = 'Amplicon_data_for_hands_on_exercices/V13_metadata.txt'#metadata
+V13_ASVtab = 'Amplicon_data_for_hands_on_exercices/V13_ASVtab.txt' #ASV table
+V13_tax = 'Amplicon_data_for_hands_on_exercices/V13_ASV_MiDAS_5.3.sintax' #taxonomy
+ASV='Amplicon_data_for_hands_on_exercices/V13_ASV.fa' #ASVs
+
+# Load into ampvis object
+d13 <- amp_load(otutable = V13_ASVtab, 
+                taxonomy = V13_tax,
+                metadata = V13_metadata,
+                fasta = ASV)
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+d13$metadata <- d13$metadata %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
+
+
+# Set paths
+V4_metadata = 'Amplicon_data_for_hands_on_exercices/V4_metadata.txt'#metadata
+V4_ASVtab = 'Amplicon_data_for_hands_on_exercices/V4_ASVtab.txt' #ASV table
+V4_tax = 'Amplicon_data_for_hands_on_exercices/V4_ASV_MiDAS_5.3.sintax' #taxonomy
+ASV4='Amplicon_data_for_hands_on_exercices/V13_ASV.fa' #ASVs
+
+# Load into ampvis object
+d4 <- amp_load(otutable = V4_ASVtab, 
+                taxonomy = V4_tax,
+                metadata = V4_metadata,
+                fasta = ASV4)
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+d4$metadata <- d4$metadata %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
+
+```
+
+
+## Rarefy the data 
+```{r}
+# filter out samples with low number of reads and rarefy
+d13_rare <- amp_subset_samples(d13, rarefy = 10000, minreads = 10000,
+                               removeAbsentOTUs = T)
+d4_rare <- amp_subset_samples(d4, rarefy = 10000, minreads = 10000,
+                               removeAbsentOTUs = T)
+
+```
+
+
+# Normalise the data
+## 
+```{r}
+# normalise to relative abundance
+d13n <- amp_subset_samples(d13_rare,normalise = T)
+
+d4n <- amp_subset_samples(d4_rare,normalise = T)
+
+```
+
+
+
+
+
+# Beta diversity
+## Make a ordination plot of all samples
+```{r}
+ord13 <- amp_ordinate(d13,
+  type = "pcoa",
+  distmeasure = "bray")
+
+ord4 <- amp_ordinate(d4,
+  type = "pcoa",
+  distmeasure = "bray")
+
+
+```
+
+
+# Functional groups
+## Filaments
+```{r}
+Filaments <- c("g__Ca_Microthrix", "g__Leptothrix","g__Sphaerotilus","g__Ca_Villigracilis","g__Trichococcus",
+               "g__Thiothrix","g__Ca_Promineofilum","Haliscomenobacter","g__Gordonia","g__Sarcinithrix","g__Ca_Amarolinea","g__Kouleothrix","g__Ca_Alysiosphaera",
+               "g__Nocardioides","g__midas_g_1668","g__Anaerolinea","g__Ca_Caldilinea","g__Ca_Hadersleviella","g__midas_g_344",
+               "g__Skermania","g__Ca_Nostocoida","g__Neomegalonema","g__Beggiatoa","g__Ca_Brevefilum")
+
+
+d13filaments <- amp_subset_taxa(d13n, tax_vector = Filaments, normalise = FALSE)
+d4filaments <- amp_subset_taxa(d4n, tax_vector = Filaments, normalise = FALSE)
+
+
+```
+
+## Syntrophes
+```{r}
+Syntrophes <- c("g__Syntrophomonas","g__Syntrophothermus", "g__Pelotomaculum", "g__Tepidimicrobium", "g__Thermacetogenium",
+                "g__Syntrophaceticus", "g__Tepidanaerobacter", "g__Syntrophus", "g__Syntrophobacter", "g__Smithella", 
+                "g__Syntrophorhabdus", "g__Geobacter", "g__Desulfovibrio", "g__Pseudothermotoga", "g__Aminobacterium", 
+                "g__Thermanaerovibrio", "g__Ca_Phosphitivorax", "g__Ca_Propionivorax")
+
+d13syntrophes <- amp_subset_taxa(d13n, tax_vector = Syntrophes, normalise = FALSE)
+d4syntrophes <- amp_subset_taxa(d4n, tax_vector = Syntrophes, normalise = FALSE)
+
+```
+
+## Archaea
+```{r}
+archaea <- c("k__Archaea")
+
+d13archaea <- amp_subset_taxa(d13n, tax_vector = archaea, normalise = FALSE)
+d4archaea <- amp_subset_taxa(d4n, tax_vector = archaea, normalise = FALSE)
+
+```
+
