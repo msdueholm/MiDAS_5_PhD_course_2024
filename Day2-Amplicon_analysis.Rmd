@@ -7,12 +7,12 @@ output: html_document
 
 # Installation of packages (!!only do once!!)
 ```{r}
-#ampvis2
-install.packages("remotes")
-remotes::install_github("kasperskytte/ampvis2")
-
-#dplyr for data manipulation
-install.packages("dplyr")
+# #ampvis2
+# install.packages("remotes")
+# remotes::install_github("kasperskytte/ampvis2")
+# 
+# #dplyr for data manipulation
+# install.packages("dplyr")
 ```
 
 
@@ -26,10 +26,15 @@ library(dplyr)
 # Load data
 ```{r}
 # Set paths
-V13_metadata = 'Amplicon_data_for_hands_on_exercices/V13_metadata.txt'#metadata
+V13_metadata_path = 'Amplicon_data_for_hands_on_exercices/V13_metadata.txt'#metadata
 V13_ASVtab = 'Amplicon_data_for_hands_on_exercices/V13_ASVtab.txt' #ASV table
 V13_tax = 'Amplicon_data_for_hands_on_exercices/V13_ASV_MiDAS_5.3.sintax' #taxonomy
 ASV='Amplicon_data_for_hands_on_exercices/V13_ASV.fa' #ASVs
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+V13_metadata <- read.delim(V13_metadata_path) %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
 
 # Load into ampvis object
 d13 <- amp_load(otutable = V13_ASVtab, 
@@ -37,28 +42,24 @@ d13 <- amp_load(otutable = V13_ASVtab,
                 metadata = V13_metadata,
                 fasta = ASV)
 
-# Add location to metadata (based on GPS coordinates) and tank ID
-d13$metadata <- d13$metadata %>% 
-  mutate(Location = paste0(Latitude, ",",Longitude),
-         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
 
 
 # Set paths
-V4_metadata = 'Amplicon_data_for_hands_on_exercices/V4_metadata.txt'#metadata
+V4_metadata_path = 'Amplicon_data_for_hands_on_exercices/V4_metadata.txt'#metadata
 V4_ASVtab = 'Amplicon_data_for_hands_on_exercices/V4_ASVtab.txt' #ASV table
 V4_tax = 'Amplicon_data_for_hands_on_exercices/V4_ASV_MiDAS_5.3.sintax' #taxonomy
 ASV4='Amplicon_data_for_hands_on_exercices/V13_ASV.fa' #ASVs
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+V4_metadata <- read.delim(V4_metadata_path) %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
 
 # Load into ampvis object
 d4 <- amp_load(otutable = V4_ASVtab, 
                 taxonomy = V4_tax,
                 metadata = V4_metadata,
                 fasta = ASV4)
-
-# Add location to metadata (based on GPS coordinates) and tank ID
-d4$metadata <- d4$metadata %>% 
-  mutate(Location = paste0(Latitude, ",",Longitude),
-         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
 
 ```
 
