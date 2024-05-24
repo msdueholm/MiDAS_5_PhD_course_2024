@@ -13,6 +13,9 @@ output: html_document
 # 
 # #dplyr for data manipulation
 # install.packages("dplyr")
+
+install.packages("vegan")
+install.packages("patchwork")
 ```
 
 
@@ -21,7 +24,6 @@ output: html_document
 library(ampvis2)
 library(dplyr)
 ```
-
 
 # Load data
 ```{r}
@@ -135,26 +137,44 @@ p
 
 
 
+
 # Beta diversity
 ## Make a ordination plot of all samples
 ```{r}
 ord13 <- amp_ordinate(d13n,
-  type = "pcoa",
-  distmeasure = "bray")
+  type = "pcoa", 
+  distmeasure = "bray",
+  transform = "none", sample_color_by = 'City',
+  sample_colorframe = T, sample_colorframe_label = 'City',
+  filter_species = 0)
 
-ord4 <- amp_ordinate(d4n,
-  type = "pcoa",
-  distmeasure = "bray")
+ord13
 
-ord35 <- amp_ordinate(d35n,
-  type = "pcoa",
-  distmeasure = "bray")
-
-
-
+d13n_wo_city13 <- amp_subset_samples(d13n, City != 'City15')
+amp_ordinate(d13n_wo_city13,
+  type = "pcoa", 
+  distmeasure = "bray",
+  transform = "none", sample_color_by = 'City',
+  sample_colorframe = T, sample_colorframe_label = 'City',
+  filter_species = 0)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Adonis (stastistical test)
 ```{r}
+
+
 # make diversity matrix
 bray_curtis_dist <- vegan::vegdist(t(d4n$abund), method = "bray")
 
@@ -199,6 +219,11 @@ location +pH + patchwork::plot_layout()
 
 
 
+
+
+
+
+
 # Functional groups
 ## Filaments
 ```{r}
@@ -209,10 +234,43 @@ Filaments <- c("g__Ca_Microthrix", "g__Leptothrix","g__Sphaerotilus","g__Ca_Vill
 
 
 d13filaments <- amp_subset_taxa(d13n, tax_vector = Filaments, normalise = FALSE)
+
+
 d4filaments <- amp_subset_taxa(d4n, tax_vector = Filaments, normalise = FALSE)
 d35filaments <- amp_subset_taxa(d35n, tax_vector = Filaments, normalise = FALSE)
 
 ```
+
+```{r}
+
+amp_heatmap(d13filaments,
+            normalise = F, tax_aggregate = 'Genus', group_by = 'Location', facet_by = 'City'
+            )
+
+```
+
+
+
+
+
+```{r}
+set.seed(22)
+d13 <- aggregate_abund()
+
+amp_ordinate(d13filaments, filter_species = 0, 
+  type = "pca",
+  sample_color_by = "City",
+  sample_colorframe = TRUE,
+  sample_colorframe_label = "City",
+  species_plotly = T,
+  species_nlabels = 10
+  #sample_plotly = T
+  )
+
+```
+
+
+
 
 ## Syntrophes
 ```{r}
@@ -234,4 +292,23 @@ d13archaea <- amp_subset_taxa(d13n, tax_vector = archaea, normalise = FALSE)
 d4archaea <- amp_subset_taxa(d4n, tax_vector = archaea, normalise = FALSE)
 d35archaea <- amp_subset_taxa(d35n, tax_vector = archaea, normalise = FALSE)
 ```
+
+
+```{r}
+amp_heatmap(d4archaea,
+            normalise = F, tax_aggregate = 'Genus', group_by = 'Location', facet_by = 'City',
+            plot_functions = T, functions = c('Methanogen')
+            )
+```
+
+
+
+
+
+
+
+
+
+
+
 
