@@ -1,0 +1,844 @@
+---
+title: "Figure 5, S6 and DataS3: Core analysis"
+author: "Morten K. D. Dueholm"
+date: "2024-03-21"
+---
+
+#Load packages
+```{r load_packages, message=FALSE, warning=FALSE, echo=FALSE, include=FALSE}
+library(ampvis2)
+library(data.table)
+library(tidyverse)
+library(patchwork)
+library(ggupset)
+```
+#Load data
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#load metadata
+Sample_metadata <- read.csv("data/DataS1_AD_metadata_231220.txt", sep="\t")
+Sample_metadata[Sample_metadata==""]<-NA
+Sample_metadata <- mutate(Sample_metadata, Sample_id = str_extract(SampleID, pattern = "[A-Z,2]{2,3}-[0-9]{2}-[A,B]"))
+Sample_metadata <- mutate(Sample_metadata, AD_id = str_extract(SampleID, pattern = "[A-Z,2]{2,3}-[0-9]{2}"))
+
+#V13
+V13_metadata <- read.csv("data/V13_metadata.txt", sep="\t",header = FALSE)
+V13_metadata <- mutate(V13_metadata, Sample_id = str_extract(V2, pattern = "[A-Z,2]{2,3}-[0-9]{2}-[A,B]"))
+V13_metadata <- merge.data.frame(V13_metadata, Sample_metadata, by ="Sample_id", all.x = TRUE) %>%
+  select(V1, everything())
+
+d13 <- amp_load(otutab = "data/V13_ASVtab.txt", 
+                taxonomy = "data/V13_ASV_vs_MiDAS_5.2.sintax",
+                metadata = V13_metadata)
+
+d13n <- amp_subset_samples(d13, minreads = 10000, normalise = TRUE)
+d13nr <- amp_subset_samples(d13n, Primary_substrate %in% c("Food waste","Industrial","Manure","Wastewater sludge"))
+
+#V4
+V4_metadata <- read.csv("data/V4c_metadata.txt", sep="\t",header = FALSE)
+V4_metadata <- mutate(V4_metadata, Sample_id = str_extract(V2, pattern = "[A-Z,2]{2,3}-[0-9]{2}-[A,B]"))
+V4_metadata <- merge.data.frame(V4_metadata, Sample_metadata, by ="Sample_id", all.x = TRUE) %>%
+  select(V1, everything())
+
+d4 <- amp_load(otutab = "data/V4_ASVtab.txt", 
+                taxonomy = "data/V4_ASV_vs_MiDAS_5.2.sintax",
+                metadata = V4_metadata)
+
+d4n <- amp_subset_samples(d4, minreads = 10000, normalise = TRUE)
+d4nr <- amp_subset_samples(d4n, Primary_substrate %in% c("Food waste","Industrial","Manure","Wastewater sludge"))
+
+#V35
+V35_metadata <- read.csv("data/V35_metadata.txt", sep="\t",header = FALSE)
+V35_metadata <- mutate(V35_metadata, Sample_id = str_extract(V2, pattern = "[A-Z,2]{2,3}-[0-9]{2}-[A,B]"))
+V35_metadata <- merge.data.frame(V35_metadata, Sample_metadata, by ="Sample_id", all.x = TRUE) %>%
+  select(V1, everything())
+
+d35 <- amp_load(otutab = "data/V35_reverse_250bp_ASVtab.txt", 
+                taxonomy = "data/V35_ASV_vs_MiDAS_5.2.sintax",
+                metadata = V35_metadata)
+
+d35_arc <- amp_subset_taxa(d35, tax_vector = "k__Archaea", normalise = FALSE)
+d35n <- amp_subset_samples(d35_arc, minreads = 10000, normalise = TRUE)
+d35nr <- amp_subset_samples(d35n, Primary_substrate %in% c("Food waste","Industrial","Manure","Wastewater sludge"))
+```
+
+### Genus-level core and CRAT taxa for V1-V3 data
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+core_analyses <- function(data,group_by="AD_id",bins_var = n_distinct(gg$AD_id)){
+
+d <- amp_export_long(
+    data,
+    metadata_vars = group_by,
+    tax_levels = c("Genus"))
+
+  #group up and summarise for core taxa
+  gg <- d[, .(sum = sum(count)), by = c("Genus", group_by)]   
+  setorderv(gg, c(group_by, "sum"), order = -1)
+  #calculate proportion % abundance of each ASV
+  gg[, Genusprop := sum / sum(sum) * 100, by = group_by]
+  #calculate how many times given ASV is observed in plants (>0)
+  gg <- gg[Genus!=""]
+  gg[, nObs := sum(sum > 0), by = Genus]
+  #calculate how many times (in how many plants) ASV is >0.1% abundant
+  gg[, nCore := sum(Genusprop > 0.1), by = Genus]
+  #add column with sum of all the reads
+  gg[, totalReads := sum(sum)]
+    gg_summary <- gg[
+    , 
+    .(nGenus = uniqueN(Genus)),
+    by = .(nObs, nCore)]
+
+###Retrive core data
+#subset ASVs present in the core
+ggV13_1 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.2),] %>%
+	group_by(Genus) %>%
+	summarise(mean_abu = mean(Genusprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_1 <- ggV13_1[ ggV13_1$Genus != "", ]
+ggV13_1$Genus <- gsub("g__","",ggV13_1$Genus)
+ggV13_1[,"V1V3"] <- "2"
+
+ggV13_2 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.5),] %>%
+	group_by(Genus) %>%
+	summarise(mean_abu = mean(Genusprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_2 <- ggV13_2[ ggV13_2$Genus != "", ]
+ggV13_2$Genus <- gsub("g__","",ggV13_2$Genus)
+ggV13_2[,"V1V3"] <- "3"
+
+ggV13_3 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.8),] %>%
+	group_by(Genus) %>%
+	summarise(mean_abu = mean(Genusprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_3 <- ggV13_3[ ggV13_3$Genus != "", ]
+ggV13_3$Genus <- gsub("g__","",ggV13_3$Genus)
+ggV13_3[,"V1V3"] <- "4"
+
+#group up and summarise for conditional abundant taxa (CAT)
+gg2 <- d[, .(sum = sum(count)), by = c("Genus", group_by)]   
+  setorderv(gg, c(group_by, "sum"), order = -1)
+  #calculate proportion % abundance of each ASV
+  gg2[, Genusprop := sum / sum(sum) * 100, by = group_by]
+  #calculate how many times given ASV is observed in plants (>0)
+  gg2 <- gg2[Genus!=""]
+  gg2 <- gg2[!(substr(Genus,4,100) %in% ggV13_1$Genus)] # Remove core genera
+  gg2[, nObs := sum(sum > 0), by = Genus]
+  #calculate how many times (in how many plants) ASV is >1% abundant
+  gg2[, nCA := sum(Genusprop > 1), by = Genus]
+  #add column with sum of all the reads
+  gg2[, totalReads := sum(sum)]
+    gg2_summary <- gg2[,.(nGenus = uniqueN(Genus)), by = .(nObs, nCA)]
+
+###Retrive core data
+#subset ASVs present in the core
+ggV13_4 <- gg2[(gg2$nCA >= 1)] %>%
+	group_by(Genus) %>%
+	summarise(mean_abu = mean(Genusprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_4 <- ggV13_4[ ggV13_4$Genus != "", ]
+ggV13_4$Genus <- gsub("g__","",ggV13_4$Genus)
+ggV13_4[,"V1V3"] <- "1"
+
+#Merge core data for v13
+ggV13_4 <- filter(ggV13_4, !(Genus %in% ggV13_3$Genus))
+ggV13_1 <- filter(ggV13_1, !(Genus %in% ggV13_2$Genus))
+ggV13_2 <- filter(ggV13_2, !(Genus %in% ggV13_3$Genus))
+
+
+Genus_core <- rbind(ggV13_3[,c(1,3)], ggV13_2[,c(1,3)]) %>%
+  rbind(., ggV13_1[,c(1,3)]) %>%
+  rbind(., ggV13_4[,c(1,3)])
+
+d <- amp_export_long(
+    data,
+    metadata_vars = group_by,
+    tax_levels = c("Species"))
+
+  #group up and summarise for core taxa
+  gg <- d[, .(sum = sum(count)), by = c("Species", group_by)]   
+  setorderv(gg, c(group_by, "sum"), order = -1)
+  #calculate proportion % abundance of each ASV
+  gg[, Speciesprop := sum / sum(sum) * 100, by = group_by]
+  #calculate how many times given ASV is observed in plants (>0)
+  gg <- gg[Species!=""]
+  gg[, nObs := sum(sum > 0), by = Species]
+  #calculate how many times (in how many plants) ASV is >0.1% abundant
+  gg[, nCore := sum(Speciesprop > 0.1), by = Species]
+  #add column with sum of all the reads
+  gg[, totalReads := sum(sum)]
+    gg_summary <- gg[
+    , 
+    .(nSpecies = uniqueN(Species)),
+    by = .(nObs, nCore)]
+    
+###Retrive core data
+#subset ASVs present in the core
+ggV13_1 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.2),] %>%
+	group_by(Species) %>%
+	summarise(mean_abu = mean(Speciesprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_1 <- ggV13_1[ ggV13_1$Species != "", ]
+ggV13_1$Species <- gsub("s__","",ggV13_1$Species)
+ggV13_1[,"V1V3"] <- "2"
+
+ggV13_2 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.5),] %>%
+	group_by(Species) %>%
+	summarise(mean_abu = mean(Speciesprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_2 <- ggV13_2[ ggV13_2$Species != "", ]
+ggV13_2$Species <- gsub("s__","",ggV13_2$Species)
+ggV13_2[,"V1V3"] <- "3"
+
+ggV13_3 <- gg[(gg$nCore >= n_distinct(gg$AD_id)*0.8),] %>%
+	group_by(Species) %>%
+	summarise(mean_abu = mean(Speciesprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_3 <- ggV13_3[ ggV13_3$Species != "", ]
+ggV13_3$Species <- gsub("s__","",ggV13_3$Species)
+ggV13_3[,"V1V3"] <- "4"
+
+#group up and summarise for conditional abundant taxa (CAT)
+gg2 <- d[, .(sum = sum(count)), by = c("Species", group_by)]   
+  setorderv(gg, c(group_by, "sum"), order = -1)
+  #calculate proportion % abundance of each ASV
+  gg2[, Speciesprop := sum / sum(sum) * 100, by = group_by]
+  #calculate how many times given ASV is observed in plants (>0)
+  gg2 <- gg2[Species!=""]
+  gg2 <- gg2[!(substr(Species,4,100) %in% ggV13_1$Species)] # Remove core genera
+  gg2[, nObs := sum(sum > 0), by = Species]
+  #calculate how many times (in how many plants) ASV is >1% abundant
+  gg2[, nCA := sum(Speciesprop > 1), by = Species]
+  #add column with sum of all the reads
+  gg2[, totalReads := sum(sum)]
+    gg2_summary <- gg2[,.(nSpecies = uniqueN(Species)), by = .(nObs, nCA)]
+
+###Retrive core data
+#subset ASVs present in the core
+ggV13_4 <- gg2[(gg2$nCA >= 1)] %>%
+	group_by(Species) %>%
+	summarise(mean_abu = mean(Speciesprop)) %>%
+           arrange(desc(mean_abu))
+
+ggV13_4 <- ggV13_4[ ggV13_4$Species != "", ]
+ggV13_4$Species <- gsub("s__","",ggV13_4$Species)
+ggV13_4[,"V1V3"] <- "1"
+
+#Merge core data for v13
+ggV13_4 <- filter(ggV13_4, !(Species %in% ggV13_3$Species))
+ggV13_1 <- filter(ggV13_1, !(Species %in% ggV13_2$Species))
+ggV13_2 <- filter(ggV13_2, !(Species %in% ggV13_3$Species))
+
+
+Species_core <- rbind(ggV13_3[,c(1,3)], ggV13_2[,c(1,3)]) %>%
+  rbind(., ggV13_1[,c(1,3)]) %>%
+  rbind(., ggV13_4[,c(1,3)]) %>%
+  merge(., tax[,c("Genus","Species")], by="Species", all.x=TRUE)
+
+out <- list(Genus_core, Species_core)
+return(out)
+}
+```
+
+### Core and CRAT analyses for V1-V3 data
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+### Create taxonomy for species-level core
+tax <- d13n$tax[1:7]
+tax$Kingdom <- gsub("k__","",tax$Kingdom)
+tax$Phylum <- gsub("p__","",tax$Phylum)
+tax$Class <- gsub("c__","",tax$Class)
+tax$Order <- gsub("o__","",tax$Order)
+tax$Family <- gsub("f__","",tax$Family)
+tax$Genus <- gsub("g__","",tax$Genus)
+tax$Species <- gsub("s__","",tax$Species)
+tax <- distinct(tax)
+
+#Food waste (Mesophilic)
+d13n_fw <- amp_subset_samples(d13n, Primary_substrate %in% c("Food waste"))
+d13n_fw_meso <- amp_subset_samples(d13n_fw, Temperature_range %in% c("Mesophilic"))
+V13_core_fw_meso <- core_analyses(d13n_fw_meso)
+
+#Industrial (Mesophilic)
+d13n_ind <- amp_subset_samples(d13n, Primary_substrate %in% c("Industrial"))
+V13_core_ind_meso <- core_analyses(d13n_ind)
+
+#Manure (Mesophilic)
+d13n_man <- amp_subset_samples(d13n, Primary_substrate %in% c("Manure"))
+d13n_man_meso <- amp_subset_samples(d13n_man, Temperature_range %in% c("Mesophilic"))
+V13_core_man_meso <- core_analyses(d13n_man_meso)
+
+#Wastewater sludge (Mesophilic)
+d13n_ww <- amp_subset_samples(d13n, Primary_substrate %in% c("Wastewater sludge"))
+d13n_ww_meso <- amp_subset_samples(d13n_ww, Temperature_range %in% c("Mesophilic"))
+V13_core_ww_meso <- core_analyses(d13n_ww_meso)
+
+#Wastewater sludge (Thermophilic)
+d13n_ww <- amp_subset_samples(d13n, Primary_substrate %in% c("Wastewater sludge"))
+d13n_ww_thermo <- amp_subset_samples(d13n_ww, Temperature_range %in% c("Thermophilic"))
+V13_core_ww_thermo <- core_analyses(d13n_ww_thermo)
+
+
+#Create and export list of core genera
+V13_genus_core_fw_meso <- V13_core_fw_meso[[1]]
+setnames(V13_genus_core_fw_meso, "V1V3", "V13_FW_meso")
+
+V13_genus_core_ind_meso <- V13_core_ind_meso[[1]]
+setnames(V13_genus_core_ind_meso, "V1V3", "V13_Ind_meso")
+ 
+V13_genus_core_man_meso <- V13_core_man_meso[[1]]
+setnames(V13_genus_core_man_meso, "V1V3", "V13_Man_meso")
+
+V13_genus_core_ww_meso <- V13_core_ww_meso[[1]]
+setnames(V13_genus_core_ww_meso, "V1V3", "V13_WWS_meso")
+
+V13_genus_core_ww_thermo <- V13_core_ww_thermo[[1]]
+setnames(V13_genus_core_ww_thermo, "V1V3", "V13_WWS_thermo")
+
+V13_genus_core <- merge(V13_genus_core_fw_meso, V13_genus_core_ind_meso, by="Genus",all = TRUE) %>%
+  merge(., V13_genus_core_man_meso, by="Genus",all = TRUE) %>%
+  merge(., V13_genus_core_ww_meso, by="Genus",all = TRUE) %>%
+  merge(., V13_genus_core_ww_thermo, by="Genus",all = TRUE)
+
+write.csv(V13_genus_core, "output/TableX_V13_genus_core.csv", row.names=FALSE)
+
+#Create and export list of core species
+V13_species_core_fw_meso <- V13_core_fw_meso[[2]]
+setnames(V13_species_core_fw_meso, "V1V3", "V13_FW_meso")
+
+V13_species_core_ind_meso <- V13_core_ind_meso[[2]]
+setnames(V13_species_core_ind_meso, "V1V3", "V13_Ind_meso")
+ 
+V13_species_core_man_meso <- V13_core_man_meso[[2]]
+setnames(V13_species_core_man_meso, "V1V3", "V13_Man_meso")
+
+V13_species_core_ww_meso <- V13_core_ww_meso[[2]]
+setnames(V13_species_core_ww_meso, "V1V3", "V13_WWS_meso")
+
+V13_species_core_ww_thermo <- V13_core_ww_thermo[[2]]
+setnames(V13_species_core_ww_thermo, "V1V3", "V13_WWS_thermo")
+
+V13_species_core <- merge(V13_species_core_fw_meso, V13_species_core_ind_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V13_species_core_man_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V13_species_core_ww_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V13_species_core_ww_thermo, by=c("Genus","Species"),all = TRUE)
+
+write.csv(V13_species_core, "output/DataS3_V13_species_core.csv", row.names=FALSE)
+```
+
+### Core and CRAT analyses for V4 data
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+### Create taxonomy for species-level core
+tax <- d4n$tax[1:7]
+tax$Kingdom <- gsub("k__","",tax$Kingdom)
+tax$Phylum <- gsub("p__","",tax$Phylum)
+tax$Class <- gsub("c__","",tax$Class)
+tax$Order <- gsub("o__","",tax$Order)
+tax$Family <- gsub("f__","",tax$Family)
+tax$Genus <- gsub("g__","",tax$Genus)
+tax$Species <- gsub("s__","",tax$Species)
+tax <- distinct(tax)
+
+#Food waste (Mesophilic)
+d4n_fw <- amp_subset_samples(d4n, Primary_substrate %in% c("Food waste"))
+d4n_fw_meso <- amp_subset_samples(d4n_fw, Temperature_range %in% c("Mesophilic"))
+V4_core_fw_meso <- core_analyses(d4n_fw_meso)
+
+#Industrial (Mesophilic)
+d4n_ind <- amp_subset_samples(d4n, Primary_substrate %in% c("Industrial"))
+V4_core_ind_meso <- core_analyses(d4n_ind)
+
+#Manure (Mesophilic)
+d4n_man <- amp_subset_samples(d4n, Primary_substrate %in% c("Manure"))
+d4n_man_meso <- amp_subset_samples(d4n_man, Temperature_range %in% c("Mesophilic"))
+V4_core_man_meso <- core_analyses(d4n_man_meso)
+
+#Wastewater sludge (Mesophilic)
+d4n_ww <- amp_subset_samples(d4n, Primary_substrate %in% c("Wastewater sludge"))
+d4n_ww_meso <- amp_subset_samples(d4n_ww, Temperature_range %in% c("Mesophilic"))
+V4_core_ww_meso <- core_analyses(d4n_ww_meso)
+
+#Wastewater sludge (Thermophilic)
+d4n_ww <- amp_subset_samples(d4n, Primary_substrate %in% c("Wastewater sludge"))
+d4n_ww_thermo <- amp_subset_samples(d4n_ww, Temperature_range %in% c("Thermophilic"))
+V4_core_ww_thermo <- core_analyses(d4n_ww_thermo)
+
+#Create and export list of core genera
+V4_genus_core_fw_meso <- V4_core_fw_meso[[1]]
+setnames(V4_genus_core_fw_meso, "V1V3", "V4_FW_meso")
+
+V4_genus_core_ind_meso <- V4_core_ind_meso[[1]]
+setnames(V4_genus_core_ind_meso, "V1V3", "V4_Ind_meso")
+ 
+V4_genus_core_man_meso <- V4_core_man_meso[[1]]
+setnames(V4_genus_core_man_meso, "V1V3", "V4_Man_meso")
+
+V4_genus_core_ww_meso <- V4_core_ww_meso[[1]]
+setnames(V4_genus_core_ww_meso, "V1V3", "V4_WWS_meso")
+
+V4_genus_core_ww_thermo <- V4_core_ww_thermo[[1]]
+setnames(V4_genus_core_ww_thermo, "V1V3", "V4_WWS_thermo")
+
+V4_genus_core <- merge(V4_genus_core_fw_meso, V4_genus_core_ind_meso, by="Genus",all = TRUE) %>%
+  merge(., V4_genus_core_man_meso, by="Genus",all = TRUE) %>%
+  merge(., V4_genus_core_ww_meso, by="Genus",all = TRUE) %>%
+  merge(., V4_genus_core_ww_thermo, by="Genus",all = TRUE)
+
+write.csv(V4_genus_core, "output/TableX_V4_genus_core.csv", row.names=FALSE)
+
+#Create and export list of core species
+V4_species_core_fw_meso <- V4_core_fw_meso[[2]]
+setnames(V4_species_core_fw_meso, "V1V3", "V4_FW_meso")
+
+V4_species_core_ind_meso <- V4_core_ind_meso[[2]]
+setnames(V4_species_core_ind_meso, "V1V3", "V4_Ind_meso")
+ 
+V4_species_core_man_meso <- V4_core_man_meso[[2]]
+setnames(V4_species_core_man_meso, "V1V3", "V4_Man_meso")
+
+V4_species_core_ww_meso <- V4_core_ww_meso[[2]]
+setnames(V4_species_core_ww_meso, "V1V3", "V4_WWS_meso")
+
+V4_species_core_ww_thermo <- V4_core_ww_thermo[[2]]
+setnames(V4_species_core_ww_thermo, "V1V3", "V4_WWS_thermo")
+
+V4_species_core <- merge(V4_species_core_fw_meso, V4_species_core_ind_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V4_species_core_man_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V4_species_core_ww_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V4_species_core_ww_thermo, by=c("Genus","Species"),all = TRUE)
+
+write.csv(V4_species_core, "output/DataS3_V4_species_core.csv", row.names=FALSE)
+```
+
+### Core and CRAT analyses for V35 data
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+### Create taxonomy for species-level core
+tax <- d35n$tax[1:7]
+tax$Kingdom <- gsub("k__","",tax$Kingdom)
+tax$Phylum <- gsub("p__","",tax$Phylum)
+tax$Class <- gsub("c__","",tax$Class)
+tax$Order <- gsub("o__","",tax$Order)
+tax$Family <- gsub("f__","",tax$Family)
+tax$Genus <- gsub("g__","",tax$Genus)
+tax$Species <- gsub("s__","",tax$Species)
+tax <- distinct(tax)
+
+#Food waste (Mesophilic)
+d35n_fw <- amp_subset_samples(d35n, Primary_substrate %in% c("Food waste"))
+d35n_fw_meso <- amp_subset_samples(d35n_fw, Temperature_range %in% c("Mesophilic"))
+V35_core_fw_meso <- core_analyses(d35n_fw_meso)
+
+#Industrial (Mesophilic)
+d35n_ind <- amp_subset_samples(d35n, Primary_substrate %in% c("Industrial"))
+V35_core_ind_meso <- core_analyses(d35n_ind)
+
+#Manure (Mesophilic)
+d35n_man <- amp_subset_samples(d35n, Primary_substrate %in% c("Manure"))
+d35n_man_meso <- amp_subset_samples(d35n_man, Temperature_range %in% c("Mesophilic"))
+V35_core_man_meso <- core_analyses(d35n_man_meso)
+
+#Wastewater sludge (Mesophilic)
+d35n_ww <- amp_subset_samples(d35n, Primary_substrate %in% c("Wastewater sludge"))
+d35n_ww_meso <- amp_subset_samples(d35n_ww, Temperature_range %in% c("Mesophilic"))
+V35_core_ww_meso <- core_analyses(d35n_ww_meso)
+
+#Wastewater sludge (Thermophilic)
+d35n_ww <- amp_subset_samples(d35n, Primary_substrate %in% c("Wastewater sludge"))
+d35n_ww_thermo <- amp_subset_samples(d35n_ww, Temperature_range %in% c("Thermophilic"))
+V35_core_ww_thermo <- core_analyses(d35n_ww_thermo)
+
+#Create and export list of core genera
+V35_genus_core_fw_meso <- V35_core_fw_meso[[1]]
+setnames(V35_genus_core_fw_meso, "V1V3", "V35_FW_meso")
+
+V35_genus_core_ind_meso <- V35_core_ind_meso[[1]]
+setnames(V35_genus_core_ind_meso, "V1V3", "V35_Ind_meso")
+ 
+V35_genus_core_man_meso <- V35_core_man_meso[[1]]
+setnames(V35_genus_core_man_meso, "V1V3", "V35_Man_meso")
+
+V35_genus_core_ww_meso <- V35_core_ww_meso[[1]]
+setnames(V35_genus_core_ww_meso, "V1V3", "V35_WWS_meso")
+
+V35_genus_core_ww_thermo <- V35_core_ww_thermo[[1]]
+setnames(V35_genus_core_ww_thermo, "V1V3", "V35_WWS_thermo")
+
+V35_genus_core <- merge(V35_genus_core_fw_meso, V35_genus_core_ind_meso, by="Genus",all = TRUE) %>%
+  merge(., V35_genus_core_man_meso, by="Genus",all = TRUE) %>%
+  merge(., V35_genus_core_ww_meso, by="Genus",all = TRUE) %>%
+  merge(., V35_genus_core_ww_thermo, by="Genus",all = TRUE)
+
+write.csv(V35_genus_core, "output/TableX_V35_genus_core.csv", row.names=FALSE)
+
+#Create and export list of core species
+V35_species_core_fw_meso <- V35_core_fw_meso[[2]]
+setnames(V35_species_core_fw_meso, "V1V3", "V35_FW_meso")
+
+V35_species_core_ind_meso <- V35_core_ind_meso[[2]]
+setnames(V35_species_core_ind_meso, "V1V3", "V35_Ind_meso")
+ 
+V35_species_core_man_meso <- V35_core_man_meso[[2]]
+setnames(V35_species_core_man_meso, "V1V3", "V35_Man_meso")
+
+V35_species_core_ww_meso <- V35_core_ww_meso[[2]]
+setnames(V35_species_core_ww_meso, "V1V3", "V35_WWS_meso")
+
+V35_species_core_ww_thermo <- V35_core_ww_thermo[[2]]
+setnames(V35_species_core_ww_thermo, "V1V3", "V35_WWS_thermo")
+
+V35_species_core <- merge(V35_species_core_fw_meso, V35_species_core_ind_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V35_species_core_man_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V35_species_core_ww_meso, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V35_species_core_ww_thermo, by=c("Genus","Species"),all = TRUE)
+
+write.csv(V35_species_core, "output/TableX_V35_species_core.csv", row.names=FALSE)
+```
+
+### Combined core list
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Genus core
+Combined_genus_core <- merge(V13_genus_core, V4_genus_core, by="Genus",all = TRUE) %>%
+  merge(., V35_genus_core, by="Genus",all = TRUE)
+Combined_genus_core$Genus_type <- apply(Combined_genus_core, 1, function(x) max(x[2:(ncol(Combined_genus_core))], na.rm = TRUE))
+
+write.csv(Combined_genus_core, "output/DataS3_Genus_core.csv", row.names=FALSE)
+
+# Species core
+Combined_species_core <- merge(V13_species_core, V4_species_core, by=c("Genus","Species"),all = TRUE) %>%
+  merge(., V35_species_core, by=c("Genus","Species"),all = TRUE)
+Combined_species_core$Species_type <- apply(Combined_species_core, 1, function(x) max(x[3:(ncol(Combined_species_core))], na.rm = TRUE))
+
+write.csv(Combined_species_core, "output/DataS3_Species_core.csv", row.names=FALSE)
+```
+
+### Create UpSet plots
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Genus core data
+Genus_core <- Combined_genus_core %>%
+  group_by(Genus) %>%
+  summarise(FW_meso = ifelse(max(c(V13_FW_meso,V4_FW_meso,V35_FW_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            Ind_meso = ifelse(max(c(V13_Ind_meso,V4_Ind_meso,V35_Ind_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            Man_meso = ifelse(max(c(V13_Man_meso,V4_Man_meso,V35_Man_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            WWS_meso = ifelse(max(c(V13_WWS_meso,V4_WWS_meso,V35_WWS_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            WWS_thermo = ifelse(max(c(V13_WWS_thermo,V4_WWS_thermo,V35_WWS_thermo),na.rm = TRUE)>1,TRUE,FALSE))
+  
+Genus_core_member <- Genus_core %>%
+  as_tibble() %>%
+  gather(CoreSet, Member, -Genus) %>%
+  filter(Member) %>%
+  select(- Member) %>%
+  group_by(Genus) %>%
+  summarize(CoreSet = list(CoreSet))
+
+Genus_UpSet <- Genus_core_member %>%
+  ggplot(aes(x = CoreSet)) +
+    geom_bar() +
+    scale_x_upset(sets=c("WWS_thermo","WWS_meso","Man_meso","Ind_meso","FW_meso")) +
+  theme_bw()
+
+# Species core
+Species_core <- Combined_species_core %>%
+  group_by(Species) %>%
+  summarise(FW_meso = ifelse(max(c(V13_FW_meso,V4_FW_meso,V35_FW_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            Ind_meso = ifelse(max(c(V13_Ind_meso,V4_Ind_meso,V35_Ind_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            Man_meso = ifelse(max(c(V13_Man_meso,V4_Man_meso,V35_Man_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            WWS_meso = ifelse(max(c(V13_WWS_meso,V4_WWS_meso,V35_WWS_meso),na.rm = TRUE)>1,TRUE,FALSE),
+            WWS_thermo = ifelse(max(c(V13_WWS_thermo,V4_WWS_thermo,V35_WWS_thermo),na.rm = TRUE)>1,TRUE,FALSE))
+  
+Species_core_member <- Species_core %>%
+  as_tibble() %>%
+  gather(CoreSet, Member, -Species) %>%
+  filter(Member) %>%
+  select(- Member) %>%
+  group_by(Species) %>%
+  summarize(CoreSet = list(CoreSet))
+
+Species_UpSet <- Species_core_member %>%
+  ggplot(aes(x = CoreSet)) +
+    geom_bar() +
+    scale_x_upset(sets=c("WWS_thermo","WWS_meso","Man_meso","Ind_meso","FW_meso")) +
+  theme_bw()
+
+UpSet <- Genus_UpSet/Species_UpSet
+
+ggsave(filename="output/Figure5ab_UpSet.pdf", plot=UpSet, width=6, height=8, useDingbats=FALSE, limitsize=FALSE)
+```
+
+### V13 core and crat coverage
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Convert heatmap data into a data.frame
+ASV_d13nr <- amp_heatmap(d13nr,
+            group_by = "Primary_substrate",
+            tax_aggregate = "OTU",
+            tax_add = c("Genus","Species"),
+            measure = "mean",
+            tax_show = 100000,
+            normalise = TRUE,
+            textmap = TRUE
+            )
+
+ASV_d13nr_2 <- ASV_d13nr %>%
+  mutate(tax = rownames(ASV_d13nr)) %>%
+  separate(tax, sep="; ", into=c("Genus","Species","ASV")) %>%
+  mutate(Genus = ifelse(grepl("ASV",Genus),"Unclassified",Genus)) %>%
+  mutate(Species = ifelse(grepl("ASV",Species),"Unclassified",Species)) %>%
+  merge(Combined_genus_core[,c("Genus","Genus_type")], by="Genus", all.x = TRUE) %>%
+  mutate(Genus_type = ifelse(Genus=="Unclassified","Unclassified",Genus_type)) %>%
+  mutate(Genus_type = ifelse(is.na(Genus_type),"Other",Genus_type)) %>%
+  merge(Combined_species_core[,c("Species","Species_type")], by="Species", all.x = TRUE) %>%
+  mutate(Species_type = ifelse(Species=="Unclassified","Unclassified",Species_type)) %>%
+  mutate(Species_type = ifelse(is.na(Species_type),"Other",Species_type)) %>%
+  gather("Food waste","Industrial","Manure","Wastewater sludge", key="Substrate", value="RA" )
+
+Genus_summary1 <- ASV_d13nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Genus_type) %>%
+  summarise(UniqueGenera=length(unique(Genus)), RAGenera=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueGeneraPercentage = UniqueGenera/sum(UniqueGenera)*100) %>%
+  mutate(Genus_type = as.factor(Genus_type)) %>%
+  mutate(Genus_type = factor(Genus_type, levels=c("Unclassified", "Other", "1", "2", "3", "4")))
+
+Species_summary1 <- ASV_d13nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Species_type) %>%
+  summarise(UniqueSpecies=length(unique(Species)), RASpecies=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueSpeciesPercentage = UniqueSpecies/sum(UniqueSpecies)*100) %>%
+  mutate(Species_type = as.factor(Species_type)) %>%
+  mutate(Species_type = factor(Species_type, levels=c("Unclassified", "Other", "1", "2", "3", "4")))
+
+p1 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=UniqueGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number observed genera") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p2 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=RAGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p3 <- ggplot(data=Species_summary1, aes(x=Substrate, y=UniqueSpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number of observed species") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p4 <- ggplot(data=Species_summary1, aes(x=Substrate, y=RASpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p <- p1 + p2 + p3 + p4 + plot_layout(ncol=4)
+ggsave(filename="output/FigureS6a_Percentage_of_core_taxa_V13.pdf", plot=p, width=10, height=3, useDingbats=FALSE, limitsize=FALSE)
+
+Genus_summary1_simple <- Genus_summary1 %>%
+  filter(Genus_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RAGenera))
+
+Species_summary1_simple <- Species_summary1 %>%
+  filter(Species_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RASpecies))
+```
+
+### V4 core and crat coverage
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Convert heatmap data into a data.frame
+ASV_d4nr <- amp_heatmap(d4nr,
+            group_by = "Primary_substrate",
+            tax_aggregate = "OTU",
+            tax_add = c("Genus","Species"),
+            measure = "mean",
+            tax_show = 100000,
+            normalise = TRUE,
+            textmap = TRUE
+            )
+
+ASV_d4nr_2 <- ASV_d4nr %>%
+  mutate(tax = rownames(ASV_d4nr)) %>%
+  separate(tax, sep="; ", into=c("Genus","Species","ASV")) %>%
+  mutate(Genus = ifelse(grepl("ASV",Genus),"Unclassified",Genus)) %>%
+  mutate(Species = ifelse(grepl("ASV",Species),"Unclassified",Species)) %>%
+  merge(Combined_genus_core[,c("Genus","Genus_type")], by="Genus", all.x = TRUE) %>%
+  mutate(Genus_type = ifelse(Genus=="Unclassified","Unclassified",Genus_type)) %>%
+  mutate(Genus_type = ifelse(is.na(Genus_type),"Other",Genus_type)) %>%
+  merge(Combined_species_core[,c("Species","Species_type")], by="Species", all.x = TRUE) %>%
+  mutate(Species_type = ifelse(Species=="Unclassified","Unclassified",Species_type)) %>%
+  mutate(Species_type = ifelse(is.na(Species_type),"Other",Species_type)) %>%
+  gather("Food waste","Industrial","Manure","Wastewater sludge", key="Substrate", value="RA" )
+
+Genus_summary1 <- ASV_d4nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Genus_type) %>%
+  summarise(UniqueGenera=length(unique(Genus)), RAGenera=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueGeneraPercentage = UniqueGenera/sum(UniqueGenera)*100) %>%
+  mutate(Genus_type = as.factor(Genus_type)) %>%
+  mutate(Genus_type = factor(Genus_type, levels=c("Unclassified", "Other", "1","2", "3", "4")))
+
+Genus_summary1_simple <- Genus_summary1 %>%
+  filter(Genus_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RAGenera))
+
+Species_summary1 <- ASV_d4nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Species_type) %>%
+  summarise(UniqueSpecies=length(unique(Species)), RASpecies=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueSpeciesPercentage = UniqueSpecies/sum(UniqueSpecies)*100) %>%
+  mutate(Species_type = as.factor(Species_type)) %>%
+  mutate(Species_type = factor(Species_type, levels=c("Unclassified", "Other", "1", "2", "3", "4")))
+
+p1 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=UniqueGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number observed genera") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p2 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=RAGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p3 <- ggplot(data=Species_summary1, aes(x=Substrate, y=UniqueSpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number of observed species") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p4 <- ggplot(data=Species_summary1, aes(x=Substrate, y=RASpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p <- p1 + p2 + p3 + p4 + plot_layout(ncol=4)
+ggsave(filename="output/Figure5cd_Percentage_of_core_taxa_V4.pdf", plot=p, width=10, height=3, useDingbats=FALSE, limitsize=FALSE)
+
+Genus_summary1_simple <- Genus_summary1 %>%
+  filter(Genus_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RAGenera))
+
+Species_summary1_simple <- Species_summary1 %>%
+  filter(Species_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RASpecies))
+```
+
+### V35 core and crat coverage
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Convert heatmap data into a data.frame
+ASV_d35nr <- amp_heatmap(d35nr,
+            group_by = "Primary_substrate",
+            tax_aggregate = "OTU",
+            tax_add = c("Genus","Species"),
+            measure = "mean",
+            tax_show = 100000,
+            normalise = TRUE,
+            textmap = TRUE
+            )
+
+ASV_d35nr_2 <- ASV_d35nr %>%
+  mutate(tax = rownames(ASV_d35nr)) %>%
+  separate(tax, sep="; ", into=c("Genus","Species","ASV")) %>%
+  mutate(Genus = ifelse(grepl("ASV",Genus),"Unclassified",Genus)) %>%
+  mutate(Species = ifelse(grepl("ASV",Species),"Unclassified",Species)) %>%
+  merge(Combined_genus_core[,c("Genus","Genus_type")], by="Genus", all.x = TRUE) %>%
+  mutate(Genus_type = ifelse(Genus=="Unclassified","Unclassified",Genus_type)) %>%
+  mutate(Genus_type = ifelse(is.na(Genus_type),"Other",Genus_type)) %>%
+  merge(Combined_species_core[,c("Species","Species_type")], by="Species", all.x = TRUE) %>%
+  mutate(Species_type = ifelse(Species=="Unclassified","Unclassified",Species_type)) %>%
+  mutate(Species_type = ifelse(is.na(Species_type),"Other",Species_type)) %>%
+  gather("Food waste","Industrial","Manure","Wastewater sludge", key="Substrate", value="RA" )
+
+Genus_summary1 <- ASV_d35nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Genus_type) %>%
+  summarise(UniqueGenera=length(unique(Genus)), RAGenera=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueGeneraPercentage = UniqueGenera/sum(UniqueGenera)*100) %>%
+  mutate(Genus_type = as.factor(Genus_type)) %>%
+  mutate(Genus_type = factor(Genus_type, levels=c("Unclassified", "Other", "1","2", "3", "4")))
+
+Species_summary1 <- ASV_d35nr_2 %>%
+  filter(RA>0) %>%
+  group_by(Substrate,Species_type) %>%
+  summarise(UniqueSpecies=length(unique(Species)), RASpecies=sum(RA)) %>%
+  group_by(Substrate) %>%
+  mutate(UniqueSpeciesPercentage = UniqueSpecies/sum(UniqueSpecies)*100) %>%
+  mutate(Species_type = as.factor(Species_type)) %>%
+  mutate(Species_type = factor(Species_type, levels=c("Unclassified", "Other", "1", "2", "3", "4")))
+
+p1 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=UniqueGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number observed genera") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p2 <- ggplot(data=Genus_summary1, aes(x=Substrate, y=RAGenera, fill=Genus_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p3 <- ggplot(data=Species_summary1, aes(x=Substrate, y=UniqueSpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Number of observed species") + 
+  theme(axis.title.x=element_blank(),legend.position = "none")
+
+p4 <- ggplot(data=Species_summary1, aes(x=Substrate, y=RASpecies, fill=Species_type)) +
+  theme_bw() +
+  geom_bar(color="black",stat="identity", width=0.8) +
+  theme(axis.text.x = element_text(angle = 45, vjust=1, hjust=1)) +
+  scale_fill_brewer(palette="RdYlBu")+
+  ylab("Relative abundance (%)") + 
+  theme(axis.title.x=element_blank())
+
+p <- p1 + p2 + p3 + p4 + plot_layout(ncol=4)
+ggsave(filename="output/FigureS6b_Percentage_of_core_taxa_V35.pdf", plot=p, width=10, height=3, useDingbats=FALSE, limitsize=FALSE)
+
+Genus_summary1_simple <- Genus_summary1 %>%
+  filter(Genus_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RAGenera))
+
+Species_summary1_simple <- Species_summary1 %>%
+  filter(Species_type %in% c(1,2,3,4)) %>%
+  group_by(Substrate) %>%
+  summarise(RA=sum(RASpecies))
+```
