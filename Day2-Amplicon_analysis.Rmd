@@ -43,7 +43,6 @@ d13 <- amp_load(otutable = V13_ASVtab,
                 fasta = ASV)
 
 
-
 # Set paths
 V4_metadata_path = 'Amplicon_data_for_hands_on_exercices/V4_metadata.txt'#metadata
 V4_ASVtab = 'Amplicon_data_for_hands_on_exercices/V4_ASVtab.txt' #ASV table
@@ -61,6 +60,24 @@ d4 <- amp_load(otutable = V4_ASVtab,
                 metadata = V4_metadata,
                 fasta = ASV4)
 
+
+# Set paths
+V35_metadata_path = 'Amplicon_data_for_hands_on_exercices/V35_metadata.txt'#metadata
+V35_ASVtab = 'Amplicon_data_for_hands_on_exercices/V35_ASVtab.txt' #ASV table
+V35_tax = 'Amplicon_data_for_hands_on_exercices/V35_ASV_MiDAS_5.3.sintax' #taxonomy
+ASV35='Amplicon_data_for_hands_on_exercices/V35_ASV.fa' #ASVs
+
+# Add location to metadata (based on GPS coordinates) and tank ID
+V35_metadata <- read.delim(V35_metadata_path) %>% 
+  mutate(Location = paste0(Latitude, ",",Longitude),
+         Tank_ID = substr(SampleID, 1, nchar(SampleID) - 2))
+
+# Load into ampvis object
+d35 <- amp_load(otutable = V35_ASVtab, 
+                taxonomy = V35_tax,
+                metadata = V35_metadata,
+                fasta = ASV35)
+
 ```
 
 
@@ -71,6 +88,8 @@ d13_rare <- amp_subset_samples(d13, rarefy = 10000, minreads = 10000,
                                removeAbsentOTUs = T)
 d4_rare <- amp_subset_samples(d4, rarefy = 10000, minreads = 10000,
                                removeAbsentOTUs = T)
+d35_rare <- amp_subset_samples(d35, rarefy = 10000, minreads = 10000,
+                               removeAbsentOTUs = T)
 
 ```
 
@@ -80,9 +99,36 @@ d4_rare <- amp_subset_samples(d4, rarefy = 10000, minreads = 10000,
 ```{r}
 # normalise to relative abundance
 d13n <- amp_subset_samples(d13_rare,normalise = T)
-
 d4n <- amp_subset_samples(d4_rare,normalise = T)
+d35n <- amp_subset_samples(d35_rare,normalise = T)
+```
 
+# Heatmaps
+```{r}
+p <-  amp_heatmap(d13n,
+            group_by = 'Country',
+            normalise = F,
+            tax_aggregate = 'Genus',
+            tax_add = 'Kingdom',
+            plot_values = T,
+            tax_show = 20) + labs(title = 'V1-3')+
+  amp_heatmap(d4n,
+            group_by = 'Country',
+            normalise = F,
+            tax_aggregate = 'Genus',
+            tax_add = 'Kingdom',
+            plot_values = T,
+            tax_show = 20)+ labs(title = 'V4') +
+  amp_heatmap(d35n,
+            group_by = 'Country',
+            normalise = F,
+            tax_aggregate = 'Genus',
+            tax_add = 'Kingdom',
+            plot_values = T,
+            tax_show = 20) + labs(title = 'V3-5') +
+  patchwork::plot_layout()
+
+p
 ```
 
 
@@ -92,16 +138,65 @@ d4n <- amp_subset_samples(d4_rare,normalise = T)
 # Beta diversity
 ## Make a ordination plot of all samples
 ```{r}
-ord13 <- amp_ordinate(d13,
+ord13 <- amp_ordinate(d13n,
   type = "pcoa",
   distmeasure = "bray")
 
-ord4 <- amp_ordinate(d4,
+ord4 <- amp_ordinate(d4n,
   type = "pcoa",
   distmeasure = "bray")
+
+ord35 <- amp_ordinate(d35n,
+  type = "pcoa",
+  distmeasure = "bray")
+
 
 
 ```
+## Adonis (stastistical test)
+```{r}
+# make diversity matrix
+bray_curtis_dist <- vegan::vegdist(t(d4n$abund), method = "bray")
+
+# Test location 
+result <- vegan::adonis2(bray_curtis_dist ~ Location, data = d4n$metadata)
+result_print <- paste0("R2=", round(result$R2[[1]],2), "; p<", result$`Pr(>F)`[1] )
+
+location <- 
+  amp_ordinate(
+  d4n, filter_species = 0, 
+  type = "pcoa",
+  distmeasure = "bray",
+  transform = 'none',
+  sample_color_by = "Location",
+  sample_colorframe = TRUE,
+  sample_colorframe_label = "Location")  +
+  labs(
+    title = "Colored by location", 
+    subtitle = result_print)
+
+# Test pH
+result <- vegan::adonis2(bray_curtis_dist ~ pH, data = d4n$metadata)
+result_print <- paste0("R2=", round(result$R2[[1]],2), "; p<", result$`Pr(>F)`[1] )
+pH <- amp_ordinate(
+  d4n, filter_species = 0,
+  type = "pcoa",
+  distmeasure = "bray",
+  transform = 'none',
+  sample_color_by = "pH",
+  sample_colorframe = TRUE,
+  sample_colorframe_label = "pH")  +
+  labs(title = "Colored by pH", 
+    subtitle = result_print)
+
+location +pH + patchwork::plot_layout()
+
+
+# add City results
+
+```
+
+
 
 
 # Functional groups
@@ -115,7 +210,7 @@ Filaments <- c("g__Ca_Microthrix", "g__Leptothrix","g__Sphaerotilus","g__Ca_Vill
 
 d13filaments <- amp_subset_taxa(d13n, tax_vector = Filaments, normalise = FALSE)
 d4filaments <- amp_subset_taxa(d4n, tax_vector = Filaments, normalise = FALSE)
-
+d35filaments <- amp_subset_taxa(d35n, tax_vector = Filaments, normalise = FALSE)
 
 ```
 
@@ -128,7 +223,7 @@ Syntrophes <- c("g__Syntrophomonas","g__Syntrophothermus", "g__Pelotomaculum", "
 
 d13syntrophes <- amp_subset_taxa(d13n, tax_vector = Syntrophes, normalise = FALSE)
 d4syntrophes <- amp_subset_taxa(d4n, tax_vector = Syntrophes, normalise = FALSE)
-
+d35syntrophes <- amp_subset_taxa(d35n, tax_vector = Syntrophes, normalise = FALSE)
 ```
 
 ## Archaea
@@ -137,6 +232,6 @@ archaea <- c("k__Archaea")
 
 d13archaea <- amp_subset_taxa(d13n, tax_vector = archaea, normalise = FALSE)
 d4archaea <- amp_subset_taxa(d4n, tax_vector = archaea, normalise = FALSE)
-
+d35archaea <- amp_subset_taxa(d35n, tax_vector = archaea, normalise = FALSE)
 ```
 
